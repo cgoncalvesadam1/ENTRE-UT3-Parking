@@ -88,48 +88,92 @@ public class Parking
         int minutosParaEntrar = entrada % 100;
         int horasParaSalir = salida / 100;
         int minutosParaSalir = salida % 100;
-        int tiempoentrada = horasParaEntrar * 60 + minutosParaEntrar;
-        String str1  = ":" ;
-        String str2 = horasParaEntrar + str1 + minutosParaEntrar;
-        String str3 = horasParaSalir + str1 + minutosParaSalir;
-        String minutosParaEntrarPt;
+
+       
+        int tresPrimerasHoras = 3 * 60;
+        
+        String strMinutosParaEntrar;
+        String strMinutosParaSalir;
+        
+        int entradaAhMinutos = horasParaEntrar * 60 + minutosParaEntrar;
+        int salidaAhMinutos = horasParaSalir * 60 + minutosParaSalir;
+        double importe = 0;
+        String tarifa = ""; 
+
         cliente++;
         if (minutosParaEntrar < 10) {
-            minutosParaEntrarPt = "0" + minutosParaEntrar;
+            strMinutosParaEntrar = "0" + minutosParaEntrar;
         }
+        else {
+            strMinutosParaEntrar = "" + minutosParaEntrar;
+        }
+          if (minutosParaSalir < 10) {
+            strMinutosParaSalir = "0" + minutosParaSalir;
+        }
+        else {
+            strMinutosParaSalir = "" + minutosParaSalir;
+        }
+        
+        String str1  = ":" ;
+        String str2 = horasParaEntrar + str1 + strMinutosParaEntrar;
+        String str3 = horasParaSalir + str1 + strMinutosParaSalir;
+
         switch(tipoTarifa){
-            case 'R': if(entrada >= HORA_INICIO_ENTRADA_TEMPRANA && entrada < HORA_FIN_ENTRADA_TEMPRANA && 
-            salida >= HORA_INICIO_SALIDA_TEMPRANA && salida < HORA_INICIO_SALIDA_TEMPRANA){
-                System.out.println("*********************************");
-                System.out.println("cliente nº:" + cliente);
-                System.out.println("hora entrada:" + str2);
-                System.out.println("hora salida:" + str3);
-                System.out.println("tarifa a aplicar:" + tipoTarifa);
-                System.out.println("importe a pagar:" + "€");
-                System.out.println("*********************************");
+            case 'R':
+            if (entradaAhMinutos >= HORA_INICIO_ENTRADA_TEMPRANA && entradaAhMinutos <= HORA_FIN_ENTRADA_TEMPRANA &&
+            salidaAhMinutos >= HORA_INICIO_SALIDA_TEMPRANA && salidaAhMinutos <= HORA_FIN_SALIDA_TEMPRANA){
+                importe = PRECIO_TARIFA_PLANA_REGULAR;
+                tarifa = "TEMPRANA Y REGULAR";
             }
-            else if(entrada < HORA_INICIO_ENTRADA_TEMPRANA && entrada >= HORA_FIN_ENTRADA_TEMPRANA && 
-            salida < HORA_INICIO_SALIDA_TEMPRANA && salida >= HORA_INICIO_SALIDA_TEMPRANA){
-                System.out.println("*********************************");
-                System.out.println("cliente nº:" + cliente);
-                System.out.println("hora entrada:" + str2);
-                System.out.println("hora salida:" + str3);
-                System.out.println("tarifa a aplicar:" + tipoTarifa);
-                System.out.println("importe a pagar:" + "€");
-                System.out.println("*********************************");
+            else {
+                if (salida < 1100 && entrada < 1100) {
+                    importe = PRECIO_BASE_REGULAR + (((salidaAhMinutos - entradaAhMinutos) / 30) * PRECIO_MEDIA_REGULAR_HASTA11);
+                }
+                else if (entrada > 1100 && salida > 1100) {
+                    importe = PRECIO_BASE_REGULAR + (((salidaAhMinutos - entradaAhMinutos) / 30) * PRECIO_MEDIA_REGULAR_DESPUES11);
+                }
+                else {
+                    importe = PRECIO_BASE_REGULAR + (((11 * 60 - entradaAhMinutos) / 30) * PRECIO_MEDIA_REGULAR_HASTA11) +
+                    (((salidaAhMinutos - 11 * 60) /30) * PRECIO_MEDIA_REGULAR_DESPUES11);
+                }
+                tarifa = "REGULAR";
             }
+            regular++;
             break;
-            case 'C':if((salida - entrada) <= 100){
-                System.out.println("*********************************");
-                System.out.println("cliente nº:" + cliente);
-                System.out.println("hora entrada:" + str2);
-                System.out.println("hora salida:" + str3);
-                System.out.println("tarifa a aplicar:" + tipoTarifa);
-                System.out.println("importe a pagar:" + "€");
-                System.out.println("*********************************");
+
+            case 'C':
+            if ((salidaAhMinutos - entradaAhMinutos) <= tresPrimerasHoras){
+                importe = PRECIO_PRIMERAS3_COMERCIAL; 
             }
+            else { 
+                importe = (PRECIO_PRIMERAS3_COMERCIAL) + ((((salidaAhMinutos - entradaAhMinutos) - tresPrimerasHoras) /30) * 
+                    PRECIO_MEDIA_COMERCIAL);
+            }
+            if (importe > importeMaximoComercial) { 
+                clienteMaximoComercial = cliente;
+                importeMaximoComercial = importe; 
+            }
+            tarifa = "COMERCIAL";
+            comercial++;
+            break;
+
+        }
+        switch (dia) {
+            case 1: clientesLunes++;
+            break;
+            case 6: clientesSabado++;
+            break;
+            case 7: clientesDomingo++;
             break;
         }
+        importeTotal += importe;
+        System.out.println("*********************************");
+        System.out.println("cliente nº:" + cliente);
+        System.out.println("hora entrada:" + str2);
+        System.out.println("hora salida:" + str3);
+        System.out.println("tarifa a aplicar:" + tarifa);
+        System.out.println("importe a pagar:" + importe + "€");
+        System.out.println("*********************************");
     }
 
     /**
@@ -139,7 +183,13 @@ public class Parking
      *  
      */
     public void printEstadísticas() {
-
+        System.out.println("********************************");
+        System.out.println("Importe total entre los clientes: " + importeTotal + "€");
+        System.out.println("Nº clientes tarifa regular: " + regular);
+        System.out.println("Nº clientes tarifa comercial: " + comercial );
+        System.out.println("Cliente tarifa COMERCIAL con factura máxima fue el " + clienteMaximoComercial + " y pagó " 
+            + importeMaximoComercial + "€");
+        System.out.println("********************************");
     }
 
     /**
